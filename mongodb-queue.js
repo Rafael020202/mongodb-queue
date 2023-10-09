@@ -78,10 +78,16 @@ Queue.prototype.add = function(payload, opts, callback) {
         ack      : id()
     };
 
-    self.col.insertOne(msg, function(err, results) {
+    self
+    .col
+    .insertOne(msg)
+    .then((result) => callback(null, '' + results.insertedId, msg.ack))
+    .catch((error) => callback(error));
+
+    /*self.col.insertOne(msg, function(err, results) {
         if (err) return callback(err)
         callback(null, '' + results.ops[0]._id, msg.ack);
-    })
+    })*/
 }
 
 Queue.prototype.get = function(opts, callback) {
