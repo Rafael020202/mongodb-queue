@@ -110,7 +110,7 @@ Queue.prototype.get = function(opts, callback) {
 
     self.col.findOneAndUpdate(query, update, {
         sort: sort, 
-        returnOriginal : false 
+        returnDocument: 'after'
     })
     .then((result) => {
         if (!result) return callback()
@@ -167,7 +167,7 @@ Queue.prototype.ping = function(ack, opts, callback) {
     }
 
     self.col.findOneAndUpdate(query, update, { 
-        returnOriginal : false 
+        returnDocument: 'after'
     })
     .then((result) => {
         if ( !result ) {
@@ -193,7 +193,7 @@ Queue.prototype.ack = function(ack, callback) {
     }
 
     self.col.findOneAndUpdate(query, update, { 
-        returnOriginal : false 
+        returnDocument: 'after'
     })
     .then((result) => {
         if ( !result ) {
