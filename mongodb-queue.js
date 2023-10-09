@@ -83,11 +83,6 @@ Queue.prototype.add = function(payload, opts, callback) {
     .insertOne(msg)
     .then((result) => callback(null, '' + result.insertedId, msg.ack))
     .catch((error) => callback(error));
-
-    /*self.col.insertOne(msg, function(err, results) {
-        if (err) return callback(err)
-        callback(null, '' + results.ops[0]._id, msg.ack);
-    })*/
 }
 
 Queue.prototype.get = function(opts, callback) {
@@ -113,19 +108,22 @@ Queue.prototype.get = function(opts, callback) {
         }
     }
 
-    self.col.findOneAndUpdate(query, update, { sort: sort, returnOriginal : false }, function(err, result) {
-        if (err) return callback(err)
-        var msg = result.value
-        if (!msg) return callback()
-
+    self.col.findOneAndUpdate(query, update, {
+        sort: sort, 
+        returnOriginal : false 
+    })
+    .then((result) => {
+        if (!result) return callback()
+        
         // convert to an external representation
-        msg = {
+        const msg = {
             // convert '_id' to an 'id' string
-            id      : '' + msg._id,
-            ack     : msg.ack,
-            payload : msg.payload,
-            tries   : msg.tries,
+            id      : '' + result._id,
+            ack     : result.ack,
+            payload : result.payload,
+            tries   : result.tries,
         }
+
         // if we have a deadQueue, then check the tries, else don't
         if ( self.deadQueue ) {
             // check the tries
@@ -147,6 +145,7 @@ Queue.prototype.get = function(opts, callback) {
 
         callback(null, msg)
     })
+    .catch((error) => callback(error))
 }
 
 Queue.prototype.ping = function(ack, opts, callback) {
@@ -166,13 +165,18 @@ Queue.prototype.ping = function(ack, opts, callback) {
             visible : nowPlusSecs(visibility)
         }
     }
-    self.col.findOneAndUpdate(query, update, { returnOriginal : false }, function(err, msg, blah) {
-        if (err) return callback(err)
-        if ( !msg.value ) {
+
+    self.col.findOneAndUpdate(query, update, { 
+        returnOriginal : false 
+    })
+    .then((result) => {
+        if ( !result ) {
             return callback(new Error("Queue.ping(): Unidentified ack  : " + ack))
         }
-        callback(null, '' + msg.value._id)
+
+        callback(null, '' + result._id)
     })
+    .catch((error) => callback(error));
 }
 
 Queue.prototype.ack = function(ack, callback) {
@@ -187,13 +191,18 @@ Queue.prototype.ack = function(ack, callback) {
             deleted : now(),
         }
     }
-    self.col.findOneAndUpdate(query, update, { returnOriginal : false }, function(err, msg, blah) {
-        if (err) return callback(err)
-        if ( !msg.value ) {
+
+    self.col.findOneAndUpdate(query, update, { 
+        returnOriginal : false 
+    })
+    .then((result) => {
+        if ( !result ) {
             return callback(new Error("Queue.ack(): Unidentified ack : " + ack))
         }
-        callback(null, '' + msg.value._id)
+
+        callback(null, '' + result._id)
     })
+    .catch((error) => callback(error))
 }
 
 Queue.prototype.clean = function(callback) {
@@ -203,16 +212,17 @@ Queue.prototype.clean = function(callback) {
         deleted : { $exists : true },
     }
 
-    self.col.deleteMany(query, callback)
+    self.col.deleteMany(query).then(callback)
 }
 
 Queue.prototype.total = function(callback) {
     var self = this
 
-    self.col.countDocuments(function(err, count) {
-        if (err) return callback(err)
-        callback(null, count)
-    })
+    self
+    .col
+    .countDocuments()
+    .then((result) => callback(null, result))
+    .catch((error) => callback(error));
 }
 
 Queue.prototype.size = function(callback) {
@@ -223,10 +233,11 @@ Queue.prototype.size = function(callback) {
         visible : { $lte : now() },
     }
 
-    self.col.countDocuments(query, function(err, count) {
-        if (err) return callback(err)
-        callback(null, count)
-    })
+    self
+    .col
+    .countDocuments(query)
+    .then((result) => callback(null, result))
+    .catch((error) => callback(error));
 }
 
 Queue.prototype.inFlight = function(callback) {
@@ -238,10 +249,11 @@ Queue.prototype.inFlight = function(callback) {
         deleted : null,
     }
 
-    self.col.countDocuments(query, function(err, count) {
-        if (err) return callback(err)
-        callback(null, count)
-    })
+    self
+    .col
+    .countDocuments(query)
+    .then((result) => callback(null, result))
+    .catch((error) => callback(error));
 }
 
 Queue.prototype.done = function(callback) {
@@ -250,9 +262,10 @@ Queue.prototype.done = function(callback) {
     var query = {
         deleted : { $exists : true },
     }
-
-    self.col.countDocuments(query, function(err, count) {
-        if (err) return callback(err)
-        callback(null, count)
-    })
+    
+    self
+    .col
+    .countDocuments(query)
+    .then((result) => callback(null, result))
+    .catch((error) => callback(error));
 }
