@@ -81,7 +81,7 @@ Queue.prototype.add = function(payload, opts, callback) {
     self
     .col
     .insertOne(msg)
-    .then((result) => callback(null, '' + results.insertedId, msg.ack))
+    .then((result) => callback(null, '' + result.insertedId, msg.ack))
     .catch((error) => callback(error));
 
     /*self.col.insertOne(msg, function(err, results) {
